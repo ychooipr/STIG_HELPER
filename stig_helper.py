@@ -19,6 +19,7 @@ import sys
 import io
 import contextlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -151,21 +152,19 @@ FONT_MONO  = ("Consolas", 9) if sys.platform == "win32" else ("Monospace", 9)
 # ============================================================
 def open_path(path):
     """Open a file or folder in the OS default viewer."""
-    target = Path(path).expanduser()
-    if not target.is_absolute():
-        target = (BASE_DIR / target).resolve()
-    else:
-        target = target.resolve()
-    if not target.exists():
-        raise FileNotFoundError(f"Path not found: {target}")
+    target_path = os.path.expanduser(str(path))
+    if not os.path.isabs(target_path):
+        target_path = os.path.join(str(BASE_DIR), target_path)
+    target_path = os.path.abspath(target_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"Path not found: {target_path}")
     try:
         if sys.platform == "win32":
-            import os
-            os.startfile(str(target))  # nosemgrep: validated local path, no shell
+            os.startfile(target_path)  # nosemgrep: validated local path, no shell
         elif sys.platform == "darwin":
-            subprocess.Popen(["open", str(target)])  # nosemgrep: constant command, validated local path
+            subprocess.Popen(["open", target_path])  # nosemgrep: constant command, validated local path
         else:
-            subprocess.Popen(["xdg-open", str(target)])  # nosemgrep: constant command, validated local path
+            subprocess.Popen(["xdg-open", target_path])  # nosemgrep: constant command, validated local path
     except Exception as e:
         return str(e)
     return None
@@ -173,21 +172,20 @@ def open_path(path):
 
 def open_folder(path):
     """Open the parent folder of a file in Explorer/Finder/Nautilus."""
-    target = Path(path).expanduser()
-    if not target.is_absolute():
-        target = (BASE_DIR / target).resolve()
-    else:
-        target = target.resolve()
-    if not target.exists():
-        raise FileNotFoundError(f"Path not found: {target}")
-    folder = target.parent
+    target_path = os.path.expanduser(str(path))
+    if not os.path.isabs(target_path):
+        target_path = os.path.join(str(BASE_DIR), target_path)
+    target_path = os.path.abspath(target_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"Path not found: {target_path}")
+    folder = os.path.dirname(target_path)
     try:
         if sys.platform == "win32":
-            os.startfile(str(folder))  # nosemgrep: validated local path, no shell
+            os.startfile(folder)  # nosemgrep: validated local path, no shell
         elif sys.platform == "darwin":
-            subprocess.Popen(["open", str(folder)])  # nosemgrep: constant command, validated local path
+            subprocess.Popen(["open", folder])  # nosemgrep: constant command, validated local path
         else:
-            subprocess.Popen(["xdg-open", str(folder)])  # nosemgrep: constant command, validated local path
+            subprocess.Popen(["xdg-open", folder])  # nosemgrep: constant command, validated local path
     except Exception as e:
         return str(e)
     return None
@@ -720,7 +718,7 @@ def build_main_menu(parent, navigate):
     # Footer
     footer = tk.Frame(parent, bg=MAIN_FOOTER_BG, pady=8)
     footer.pack(fill="x", side="bottom")
-    tk.Label(footer, text="v1.4.1", font=FONT_SMALL,
+    tk.Label(footer, text="v1.4.2", font=FONT_SMALL,
              bg=MAIN_FOOTER_BG, fg=MAIN_SUBTEXT).pack(side="left", padx=12)
     ttk.Button(footer, text="Exit",
                command=parent.winfo_toplevel().destroy).pack(side="right", padx=12)

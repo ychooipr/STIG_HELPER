@@ -1,4 +1,4 @@
-# STIG Helper v1.4.1
+# STIG Helper v1.4.2
 
 STIG Helper is a Windows-friendly desktop toolkit for working with DISA STIG checklists.
 It is designed to help analysts merge, compare, export, summarize, and document STIG results

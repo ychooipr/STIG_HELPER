@@ -53,39 +53,37 @@ XML_ROOT_PATTERN = re.compile(rb"<\?xml[^>]*\?>\s*<([A-Za-z_][\w:.-]*)\b|^\s*<([
 
 def _resolve_existing_local_path(path_value):
     """Resolve a user-visible local path and require that it already exists."""
-    target = Path(path_value).expanduser()
-    if not target.is_absolute():
-        target = (BASE_DIR / target).resolve()
-    else:
-        target = target.resolve()
-    if not target.exists():
-        raise FileNotFoundError(f"Path not found: {target}")
-    return target
+    target_path = os.path.expanduser(str(path_value))
+    if not os.path.isabs(target_path):
+        target_path = os.path.join(str(BASE_DIR), target_path)
+    target_path = os.path.abspath(target_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"Path not found: {target_path}")
+    return target_path
 
 
 def _resolve_checklist_path(path_value, allowed_suffixes=None):
     """Resolve and validate a checklist input path before reading it."""
     allowed = {suffix.lower() for suffix in (allowed_suffixes or ALLOWED_CHECKLIST_SUFFIXES)}
     target = _resolve_existing_local_path(path_value)
-    if not target.is_file():
+    if not os.path.isfile(target):
         raise ValueError(f"Checklist path is not a file: {target}")
-    if target.suffix.lower() not in allowed:
+    if Path(target).suffix.lower() not in allowed:
         allowed_text = ", ".join(sorted(allowed))
-        raise ValueError(f"Unsupported checklist type: {target.name} (expected {allowed_text})")
+        raise ValueError(f"Unsupported checklist type: {os.path.basename(target)} (expected {allowed_text})")
     return target
 
 
 def _open_local_folder(path_value):
     """Open the parent folder for a validated local path without using a shell."""
     target = _resolve_existing_local_path(path_value)
-    folder = target if target.is_dir() else target.parent
-    folder_str = str(folder)
+    folder = target if os.path.isdir(target) else os.path.dirname(target)
     if sys.platform == "win32":
-        os.startfile(folder_str)  # nosemgrep: validated local path, no shell
+        os.startfile(folder)  # nosemgrep: validated local path, no shell
     elif sys.platform == "darwin":
-        subprocess.Popen(["open", folder_str])  # nosemgrep: constant command, validated local path
+        subprocess.Popen(["open", folder])  # nosemgrep: constant command, validated local path
     else:
-        subprocess.Popen(["xdg-open", folder_str])  # nosemgrep: constant command, validated local path
+        subprocess.Popen(["xdg-open", folder])  # nosemgrep: constant command, validated local path
 
 
 def _ensure_xml_has_no_external_entities(xml_bytes, source_name="XML"):
@@ -106,7 +104,8 @@ def _ensure_allowed_xml_root(xml_bytes, allowed_roots, source_name="XML"):
 
 
 def _parse_safe_xml_file(path_value, source_name="XML", allowed_roots=("CHECKLIST",)):
-    xml_bytes = _resolve_existing_local_path(path_value).read_bytes()
+    with open(_resolve_existing_local_path(path_value), "rb") as xml_handle:
+        xml_bytes = xml_handle.read()
     _ensure_xml_has_no_external_entities(xml_bytes, source_name)
     _ensure_allowed_xml_root(xml_bytes, allowed_roots, source_name)
     root = ET.fromstring(xml_bytes)  # nosemgrep: input is validated local XML with blocked DOCTYPE/ENTITY and allowed roots
@@ -186,7 +185,8 @@ def parse_ckl(ckl_path):
 def parse_cklb(cklb_path):
     """Parse a CKLB JSON file into a CKL-like XML structure."""
     cklb_path = _resolve_checklist_path(cklb_path, allowed_suffixes={".cklb"})
-    doc = json.loads(Path(cklb_path).read_text(encoding="utf-8"))
+    with open(cklb_path, "r", encoding="utf-8") as cklb_handle:
+        doc = json.load(cklb_handle)
 
     root = ET.Element("CHECKLIST")
     asset_el = ET.SubElement(root, "ASSET")
