@@ -1,0 +1,13 @@
+ACAS Status,Eval-STIG Status,Take From,Reasoning
+NotAFinding,Not_Applicable,Eval-STIG,N/A is stronger than NF (no check needed at all)
+Not_Applicable,NotAFinding,ACAS,Same as above — take the N/A
+Open,NotAFinding,Eval-STIG,Eval found it compliant; ACAS missed it
+Open,Not_Applicable,Eval-STIG,Eval determined it doesn't apply
+Not_Reviewed,NotAFinding,Eval-STIG,Eval has an answer; ACAS doesn't
+Not_Reviewed,Not_Applicable,Eval-STIG,Same as above
+Not_Reviewed,Open,Eval-STIG,Eval has an answer; ACAS doesn't
+Not_Reviewed,Not_Reviewed,ACAS,Both missing — keep ACAS as base
+NotAFinding,NotAFinding,ACAS,Both agree — keep ACAS as base
+Open,Open,ACAS,Both agree it's a finding — keep ACAS
+NotAFinding,Open,ACAS,Keep ACAS as base when ACAS already marks the item compliant
+Not_Applicable,Open,ACAS,Keep ACAS as base when ACAS already marks the item not applicable

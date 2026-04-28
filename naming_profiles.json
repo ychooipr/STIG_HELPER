@@ -1,0 +1,82 @@
+{
+  "__defaults__": {
+    "project_name": "",
+    "zone": "Production"
+  },
+  "active directory security technical implementation guide": {
+    "category": "Directory",
+    "technology": "Active Directory"
+  },
+  "application security requirements guide": {
+    "category": "Application",
+    "technology": "Application"
+  },
+  "database security requirements guide": {
+    "category": "Database",
+    "technology": "Database"
+  },
+  "google chrome security technical implementation guide": {
+    "category": "Browser",
+    "technology": "Chrome"
+  },
+  "internet information services security technical implementation guide": {
+    "category": "Web",
+    "technology": "IIS"
+  },
+  "microsoft edge security technical implementation guide": {
+    "category": "Browser",
+    "technology": "Edge"
+  },
+  "microsoft windows 10 security technical implementation guide": {
+    "category": "OS",
+    "technology": "Windows 10"
+  },
+  "microsoft windows 11 security technical implementation guide": {
+    "category": "OS",
+    "technology": "Windows 11"
+  },
+  "microsoft windows server 2016 security technical implementation guide": {
+    "category": "OS",
+    "technology": "Windows 2016"
+  },
+  "microsoft windows server 2019 security technical implementation guide": {
+    "category": "OS",
+    "technology": "Windows 2019"
+  },
+  "microsoft windows server 2022 security technical implementation guide": {
+    "subcategory": "",
+    "technology": "Windows 2022"
+  },
+  "mozilla firefox security technical implementation guide": {
+    "category": "Browser",
+    "technology": "Firefox"
+  },
+  "operating system security requirements guide": {
+    "category": "OS",
+    "technology": "Operating System"
+  },
+  "oracle database security technical implementation guide": {
+    "category": "Database",
+    "technology": "Oracle"
+  },
+  "red hat enterprise linux 8 security technical implementation guide": {
+    "category": "OS",
+    "technology": "RHEL 8"
+  },
+  "red hat enterprise linux 9 security technical implementation guide": {
+    "category": "OS",
+    "technology": "RHEL 9"
+  },
+  "sql server security technical implementation guide": {
+    "category": "Database",
+    "technology": "SQL Server"
+  },
+  "ubuntu security technical implementation guide": {
+    "category": "OS",
+    "technology": "Ubuntu"
+  },
+  "web server security requirements guide": {
+    "category": "Web",
+    "technology": "Web Server"
+  }
+}
