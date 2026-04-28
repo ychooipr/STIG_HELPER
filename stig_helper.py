@@ -151,14 +151,21 @@ FONT_MONO  = ("Consolas", 9) if sys.platform == "win32" else ("Monospace", 9)
 # ============================================================
 def open_path(path):
     """Open a file or folder in the OS default viewer."""
+    target = Path(path).expanduser()
+    if not target.is_absolute():
+        target = (BASE_DIR / target).resolve()
+    else:
+        target = target.resolve()
+    if not target.exists():
+        raise FileNotFoundError(f"Path not found: {target}")
     try:
         if sys.platform == "win32":
             import os
-            os.startfile(str(path))
+            os.startfile(str(target))  # nosemgrep: validated local path, no shell
         elif sys.platform == "darwin":
-            subprocess.Popen(["open", str(path)])
+            subprocess.Popen(["open", str(target)])  # nosemgrep: constant command, validated local path
         else:
-            subprocess.Popen(["xdg-open", str(path)])
+            subprocess.Popen(["xdg-open", str(target)])  # nosemgrep: constant command, validated local path
     except Exception as e:
         return str(e)
     return None

@@ -38,6 +38,7 @@ REPORTS_DIR = BASE_DIR / "Reports"
 BUCKET_META_NAME = "bucket.json"
 FORBIDDEN_XML_PATTERN = re.compile(rb"<!\s*(DOCTYPE|ENTITY)\b", re.IGNORECASE)
 ALLOWED_CHECKLIST_SUFFIXES = {".ckl"}
+XML_ROOT_PATTERN = re.compile(rb"<\?xml[^>]*\?>\s*<([A-Za-z_][\w:.-]*)\b|^\s*<([A-Za-z_][\w:.-]*)\b", re.DOTALL)
 
 
 def _resolve_existing_local_path(path_value):
@@ -95,10 +96,22 @@ def _ensure_xml_has_no_external_entities(xml_bytes, source_name="XML"):
         raise ValueError(f"{source_name} contains unsupported DOCTYPE/ENTITY declarations.")
 
 
-def _parse_safe_xml_file(path_value, source_name="XML"):
+def _ensure_allowed_xml_root(xml_bytes, allowed_roots, source_name="XML"):
+    """Reject XML whose root element is not one of the expected names."""
+    match = XML_ROOT_PATTERN.search(xml_bytes)
+    if not match:
+        raise ValueError(f"{source_name} does not contain a recognizable XML root element.")
+    root_name = (match.group(1) or match.group(2) or b"").decode("utf-8", "replace")
+    if root_name not in allowed_roots:
+        allowed_text = ", ".join(sorted(allowed_roots))
+        raise ValueError(f"{source_name} root element {root_name!r} is not allowed (expected {allowed_text}).")
+
+
+def _parse_safe_xml_file(path_value, source_name="XML", allowed_roots=("CHECKLIST",)):
     xml_bytes = _resolve_existing_local_path(path_value).read_bytes()
     _ensure_xml_has_no_external_entities(xml_bytes, source_name)
-    root = ET.fromstring(xml_bytes)
+    _ensure_allowed_xml_root(xml_bytes, allowed_roots, source_name)
+    root = ET.fromstring(xml_bytes)  # nosemgrep: input is validated local XML with blocked DOCTYPE/ENTITY and allowed roots
     return ET.ElementTree(root)
 
 
@@ -108,7 +121,7 @@ def _parse_safe_xml_file(path_value, source_name="XML"):
 def parse_ckl(ckl_path):
     """Parse a CKL file into a normalized dict structure."""
     ckl_path = _resolve_checklist_path(ckl_path, allowed_suffixes={".ckl"})
-    tree = _parse_safe_xml_file(ckl_path, source_name=f"CKL file {ckl_path}")
+    tree = _parse_safe_xml_file(ckl_path, source_name=f"CKL file {ckl_path}", allowed_roots=("CHECKLIST",))
     root = tree.getroot()
 
     asset = {}
