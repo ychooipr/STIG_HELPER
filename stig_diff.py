@@ -37,6 +37,7 @@ SNAPSHOTS_DIR = BASE_DIR / "Snapshots"
 REPORTS_DIR = BASE_DIR / "Reports"
 BUCKET_META_NAME = "bucket.json"
 FORBIDDEN_XML_PATTERN = re.compile(rb"<!\s*(DOCTYPE|ENTITY)\b", re.IGNORECASE)
+ALLOWED_CHECKLIST_SUFFIXES = {".ckl"}
 
 
 def _resolve_existing_local_path(path_value):
@@ -48,6 +49,18 @@ def _resolve_existing_local_path(path_value):
         target = target.resolve()
     if not target.exists():
         raise FileNotFoundError(f"Path not found: {target}")
+    return target
+
+
+def _resolve_checklist_path(path_value, allowed_suffixes=None):
+    """Resolve and validate a checklist input path before reading it."""
+    allowed = {suffix.lower() for suffix in (allowed_suffixes or ALLOWED_CHECKLIST_SUFFIXES)}
+    target = _resolve_existing_local_path(path_value)
+    if not target.is_file():
+        raise ValueError(f"Checklist path is not a file: {target}")
+    if target.suffix.lower() not in allowed:
+        allowed_text = ", ".join(sorted(allowed))
+        raise ValueError(f"Unsupported checklist type: {target.name} (expected {allowed_text})")
     return target
 
 
@@ -83,7 +96,7 @@ def _ensure_xml_has_no_external_entities(xml_bytes, source_name="XML"):
 
 
 def _parse_safe_xml_file(path_value, source_name="XML"):
-    xml_bytes = Path(path_value).read_bytes()
+    xml_bytes = _resolve_existing_local_path(path_value).read_bytes()
     _ensure_xml_has_no_external_entities(xml_bytes, source_name)
     root = ET.fromstring(xml_bytes)
     return ET.ElementTree(root)
@@ -94,6 +107,7 @@ def _parse_safe_xml_file(path_value, source_name="XML"):
 # ============================================================
 def parse_ckl(ckl_path):
     """Parse a CKL file into a normalized dict structure."""
+    ckl_path = _resolve_checklist_path(ckl_path, allowed_suffixes={".ckl"})
     tree = _parse_safe_xml_file(ckl_path, source_name=f"CKL file {ckl_path}")
     root = tree.getroot()
 

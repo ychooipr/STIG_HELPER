@@ -47,6 +47,7 @@ W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 W_TAG = f"{{{W_NS}}}"
 W_VAL = f"{{{W_NS}}}val"
 FORBIDDEN_XML_PATTERN = re.compile(rb"<!\s*(DOCTYPE|ENTITY)\b", re.IGNORECASE)
+ALLOWED_CHECKLIST_SUFFIXES = {".ckl", ".cklb"}
 
 
 def _resolve_existing_local_path(path_value):
@@ -58,6 +59,18 @@ def _resolve_existing_local_path(path_value):
         target = target.resolve()
     if not target.exists():
         raise FileNotFoundError(f"Path not found: {target}")
+    return target
+
+
+def _resolve_checklist_path(path_value, allowed_suffixes=None):
+    """Resolve and validate a checklist input path before reading it."""
+    allowed = {suffix.lower() for suffix in (allowed_suffixes or ALLOWED_CHECKLIST_SUFFIXES)}
+    target = _resolve_existing_local_path(path_value)
+    if not target.is_file():
+        raise ValueError(f"Checklist path is not a file: {target}")
+    if target.suffix.lower() not in allowed:
+        allowed_text = ", ".join(sorted(allowed))
+        raise ValueError(f"Unsupported checklist type: {target.name} (expected {allowed_text})")
     return target
 
 
@@ -81,7 +94,7 @@ def _ensure_xml_has_no_external_entities(xml_bytes, source_name="XML"):
 
 
 def _parse_safe_xml_file(path_value, source_name="XML"):
-    xml_bytes = Path(path_value).read_bytes()
+    xml_bytes = _resolve_existing_local_path(path_value).read_bytes()
     _ensure_xml_has_no_external_entities(xml_bytes, source_name)
     root = ET.fromstring(xml_bytes)
     return ET.ElementTree(root)
@@ -114,6 +127,7 @@ def status_priority(s):
 def parse_ckl(ckl_path):
     """Parse a CKL and return (tree, root, asset_dict, vulns_by_id, istigs,
                                stig_info_dict_for_first_istig)."""
+    ckl_path = _resolve_checklist_path(ckl_path, allowed_suffixes={".ckl"})
     tree = _parse_safe_xml_file(ckl_path, source_name=f"CKL file {ckl_path}")
     root = tree.getroot()
 
@@ -157,6 +171,7 @@ def parse_ckl(ckl_path):
 
 def parse_cklb(cklb_path):
     """Parse a CKLB JSON file into a CKL-like XML structure."""
+    cklb_path = _resolve_checklist_path(cklb_path, allowed_suffixes={".cklb"})
     doc = json.loads(Path(cklb_path).read_text(encoding="utf-8"))
 
     root = ET.Element("CHECKLIST")
@@ -248,7 +263,7 @@ def parse_cklb(cklb_path):
 
 
 def parse_any_checklist(path):
-    path = Path(path)
+    path = _resolve_checklist_path(path)
     if path.suffix.lower() == ".cklb":
         return parse_cklb(path)
     return parse_ckl(path)
@@ -1137,7 +1152,7 @@ def create_artifact_report(ckl_path, selected_vids=None, narrative_overrides=Non
 
 
 def build_cklb_document(ckl_path, title=None):
-    ckl_path = Path(ckl_path).resolve()
+    ckl_path = _resolve_checklist_path(ckl_path)
     _, root, asset, _, istigs, _ = parse_any_checklist(ckl_path)
 
     stig_docs = []
